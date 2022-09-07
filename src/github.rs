@@ -33,6 +33,8 @@ impl<'a> GitHub<'a> {
             .text()
             .await?;
 
+        println!("{:?}", res);
+
         Ok(())
     }
     pub fn user() {}

@@ -1,8 +1,8 @@
 mod github;
 
 use dotenv::dotenv;
-use github::GitHub;
-use inquire::{InquireError, Select};
+use github::{GitHub, GitHubErr};
+use inquire::{InquireError, Select, Text};
 use std::{
     env::{self, VarError},
     fmt::Display,
@@ -15,6 +15,8 @@ enum AppErr {
     AuthTokenErr(#[from] VarError),
     #[error("Failed to get user input")]
     InputErr(#[from] InquireError),
+    #[error("GitHub Error")]
+    GitHubErr(#[from] GitHubErr),
 }
 #[derive(Debug)]
 enum Actions {
@@ -42,12 +44,19 @@ async fn main() -> Result<(), AppErr> {
     let github = GitHub::new(&auth_token);
 
     loop {
-        let input = Select::new(
+        let action = Select::new(
             "GitHub",
             vec![Actions::Search, Actions::UserInfo, Actions::Repos],
         )
         .prompt()?;
-    }
 
-    Ok(())
+        match action {
+            Actions::Search => {
+                let query = Text::new("User Id").prompt()?;
+                github.search_users(&query).await?;
+            }
+            Actions::UserInfo => todo!(),
+            Actions::Repos => todo!(),
+        }
+    }
 }
