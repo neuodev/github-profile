@@ -26,7 +26,7 @@ enum Actions {
 impl Display for Actions {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let txt = match self {
-            Actions::Search => "Search...",
+            Actions::Search => "Search users...",
             Actions::UserInfo => "User profile",
             Actions::Repos => "Inspect Repos",
         };
