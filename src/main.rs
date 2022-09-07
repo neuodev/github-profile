@@ -22,7 +22,6 @@ enum AppErr {
 enum Actions {
     Search,
     UserInfo,
-    Repos,
 }
 
 impl Display for Actions {
@@ -30,7 +29,6 @@ impl Display for Actions {
         let txt = match self {
             Actions::Search => "Search users...",
             Actions::UserInfo => "User profile",
-            Actions::Repos => "Inspect Repos",
         };
 
         write!(f, "{}", txt)
@@ -45,11 +43,7 @@ async fn main() -> Result<(), AppErr> {
     let github = GitHub::new(&auth_token, &username);
 
     loop {
-        let action = Select::new(
-            "GitHub",
-            vec![Actions::Search, Actions::UserInfo, Actions::Repos],
-        )
-        .prompt()?;
+        let action = Select::new("GitHub", vec![Actions::Search, Actions::UserInfo]).prompt()?;
 
         match action {
             Actions::Search => {
@@ -65,11 +59,23 @@ async fn main() -> Result<(), AppErr> {
                     .with_page_size(10)
                     .prompt()?;
                 println!("Loading...");
-                let user = github.user(&user.login).await?;
-                println!("{}", user);
+                match github.user(&user.login).await {
+                    Ok(user) => {
+                        println!("{}", user);
+                    }
+                    Err(e) => println!("{:?}", e),
+                };
             }
-            Actions::UserInfo => todo!(),
-            Actions::Repos => todo!(),
+            Actions::UserInfo => {
+                let username = Text::new("Username").prompt()?;
+                println!("Loading info for {}...", username);
+                match github.user(&username).await {
+                    Ok(user) => {
+                        println!("{}", user);
+                    }
+                    Err(e) => println!("{:?}", e),
+                };
+            }
         }
     }
 }

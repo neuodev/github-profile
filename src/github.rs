@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use reqwest::{
     header::{HeaderMap, HeaderValue, InvalidHeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT},
-    Client,
+    Client, StatusCode,
 };
 use serde::Deserialize;
 use thiserror::Error;
@@ -17,6 +17,8 @@ pub enum GitHubErr {
     APIErr(#[from] reqwest::Error),
     #[error("Serialization error")]
     SerdeErr(#[from] serde_json::Error),
+    #[error("Error response")]
+    ErrResponse(String),
 }
 
 pub struct GitHub<'a> {
@@ -50,14 +52,17 @@ impl<'a> GitHub<'a> {
             .get(url)
             .headers(self.get_common_headers()?)
             .send()
-            .await?
-            .text()
             .await?;
 
-        let user = serde_json::from_str(&res)?;
-        Ok(user)
+        let status = res.status();
+        let body = res.text().await?;
+        if !status.is_success() {
+            Err(GitHubErr::ErrResponse(body))
+        } else {
+            let user = serde_json::from_str(&body)?;
+            Ok(user)
+        }
     }
-    pub fn repos() {}
 
     fn get_common_headers(&self) -> Result<HeaderMap, GitHubErr> {
         let mut headers = HeaderMap::new();
@@ -115,35 +120,35 @@ pub struct User {
 
 impl Display for User {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}({}) 👋", self.name, self.login)?;
+        write!(f, "👋 {}({}) \n", self.name, self.login)?;
         if let Some(bio) = &self.bio {
-            write!(f, "❔ {}", bio)?;
+            write!(f, "❔ {} \n", bio)?;
         }
 
         if let Some(com) = &self.company {
-            write!(f, "work ⛑️ @ {}", com)?;
+            write!(f, "🖥️  @ {} \n", com)?;
         }
 
         if let Some(loc) = &self.location {
-            write!(f, "📍 {}", loc)?;
+            write!(f, "📍 {} \n", loc)?;
         }
 
         if let Some(email) = &self.email {
-            write!(f, "📧 {}", email)?;
+            write!(f, "📧 {} \n", email)?;
         }
 
         write!(
             f,
-            "Public repos 😃{}, public gists 🍞 {}",
+            "Public repos 📔 {}, public gists 📕 {} \n",
             self.public_repos, self.public_gists
         )?;
 
         write!(
             f,
-            "followers 🏃 {}, following ❤️‍🔥 {} ",
+            "followers 🏃 {}, following ❤️ {} \n",
             self.followers, self.following
         )?;
 
-        write!(f, "More at 📘 {}", self.html_url)
+        write!(f, "More at 📘 {} \n", self.html_url)
     }
 }
