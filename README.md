@@ -6,6 +6,7 @@ Using GitHub API to search and get users info.
     <img src="./icon.gif" title="GitHub Profile" alt="GitHub Profile"/>
 </p>
 
+# Preview
 <p align="center">
     <img src="./preview.gif" title="Preview" alt="Preview"/>
 </p>
