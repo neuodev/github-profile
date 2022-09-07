@@ -42,7 +42,7 @@ impl<'a> GitHub<'a> {
         let users: SearchRes = serde_json::from_str(&res)?;
         Ok(users)
     }
-    pub async fn user(&self, username: &str) -> Result<(), GitHubErr> {
+    pub async fn user(&self, username: &str) -> Result<User, GitHubErr> {
         let url = format!("{GITHUB_API}/users/{username}");
 
         let client = Client::new();
@@ -54,7 +54,8 @@ impl<'a> GitHub<'a> {
             .text()
             .await?;
 
-        Ok(())
+        let user = serde_json::from_str(&res)?;
+        Ok(user)
     }
     pub fn repos() {}
 
@@ -74,7 +75,7 @@ impl<'a> GitHub<'a> {
 
 #[derive(Debug, Deserialize)]
 pub struct SearchEntry {
-    login: String,
+    pub login: String,
     id: u32,
     html_url: String,
     #[serde(rename = "type")]
@@ -100,13 +101,12 @@ impl Display for SearchEntry {
 #[derive(Debug, Deserialize)]
 pub struct User {
     login: String,
-    id: u32,
     html_url: String,
     name: String,
-    bio: String,
-    company: String,
-    location: String,
-    email: String,
+    bio: Option<String>,
+    company: Option<String>,
+    location: Option<String>,
+    email: Option<String>,
     public_repos: u32,
     public_gists: u32,
     followers: u32,
@@ -115,13 +115,23 @@ pub struct User {
 
 impl Display for User {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}@{} ({}) -- 💻 {}",
-            self.name, self.company, self.login, self.bio
-        )?;
-        write!(f, "📍 {}", self.location)?;
-        write!(f, "📧 {}", self.email)?;
+        write!(f, "{}({}) 👋", self.name, self.login)?;
+        if let Some(bio) = &self.bio {
+            write!(f, "❔ {}", bio)?;
+        }
+
+        if let Some(com) = &self.company {
+            write!(f, "work ⛑️ @ {}", com)?;
+        }
+
+        if let Some(loc) = &self.location {
+            write!(f, "📍 {}", loc)?;
+        }
+
+        if let Some(email) = &self.email {
+            write!(f, "📧 {}", email)?;
+        }
+
         write!(
             f,
             "Public repos 😃{}, public gists 🍞 {}",
@@ -132,6 +142,8 @@ impl Display for User {
             f,
             "followers 🏃 {}, following ❤️‍🔥 {} ",
             self.followers, self.following
-        )
+        )?;
+
+        write!(f, "More at 📘 {}", self.html_url)
     }
 }

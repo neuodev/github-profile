@@ -56,10 +56,17 @@ async fn main() -> Result<(), AppErr> {
                 let query = Text::new("User Id").prompt()?;
                 println!("Loading...");
                 let res = github.search_users(&query).await?;
+                if res.total_count == 0 {
+                    println!("🤚 No match for {} ", query);
+                    continue;
+                }
                 println!("Total Count: {}", res.total_count);
                 let user = Select::new("Search Result", res.items)
                     .with_page_size(10)
                     .prompt()?;
+                println!("Loading...");
+                let user = github.user(&user.login).await?;
+                println!("{}", user);
             }
             Actions::UserInfo => todo!(),
             Actions::Repos => todo!(),
