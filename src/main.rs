@@ -41,7 +41,8 @@ impl Display for Actions {
 async fn main() -> Result<(), AppErr> {
     dotenv().ok();
     let auth_token = env::var("GITHUB_TOKEN")?;
-    let github = GitHub::new(&auth_token);
+    let username = env::var("GITHUB_USERNAME")?;
+    let github = GitHub::new(&auth_token, &username);
 
     loop {
         let action = Select::new(
@@ -53,7 +54,12 @@ async fn main() -> Result<(), AppErr> {
         match action {
             Actions::Search => {
                 let query = Text::new("User Id").prompt()?;
-                github.search_users(&query).await?;
+                println!("Loading...");
+                let res = github.search_users(&query).await?;
+                println!("Total Count: {}", res.total_count);
+                let user = Select::new("Search Result", res.items)
+                    .with_page_size(10)
+                    .prompt()?;
             }
             Actions::UserInfo => todo!(),
             Actions::Repos => todo!(),
